@@ -37,6 +37,7 @@ export default class Application {
     this.composer = null;
     this.gui = null;
     this.audio = null; //Audio module load dynamically
+    this.percentAnim = 0;
 
     this.strings = []; //Array of wavee strings
 
@@ -63,7 +64,7 @@ export default class Application {
     let fSettings = this.gui.addFolder("Settings");
     fSettings.open();
   }
-
+  
   setupCamera() {
     this.camera = new Camera({
       time: this.time,
@@ -113,7 +114,7 @@ export default class Application {
 
     const stringPositions = [];
     const stringColors = [];
-    const divisions = 100;
+    const divisions = 300;
 
     for (let i = 0; i < divisions; i++) {
       stringPositions.push((i / divisions) * 100, 0, 0);
@@ -121,7 +122,7 @@ export default class Application {
     }
 
     const strings = [];
-    const LINE_NB = 6;
+    const LINE_NB = 1;
 
     const group = new THREE.Group();
     
@@ -129,7 +130,8 @@ export default class Application {
 
       this.strings[j] = new String({
         colors: stringColors,
-        positions: stringPositions
+        positions: stringPositions,
+        stringIndex: j
       })
 
       this.strings[j].position.z = j;
@@ -146,9 +148,7 @@ export default class Application {
 
     let audioEvent = async (e) => {
 
-      this.audio = await (await import("./utils/audio")).default;
-
-      console.log('audio :>> ', this.audio);
+      this.audio = (await import("./utils/audio")).default;
 
       this.audio.start({
         onBeat: onBeat,
@@ -159,7 +159,6 @@ export default class Application {
 
       window.removeEventListener('click', audioEvent);
     }
-    
     window.addEventListener("click", audioEvent);
   }
 
@@ -174,22 +173,15 @@ export default class Application {
     if (this.audio && this.audio.isPlaying) {
       this.audio.update();
 
+      this.percentAnim > 1 ? this.percentAnim = 0: this.percentAnim += 0.01;
+
       for (let index = 0; index < this.strings.length; index++) {
-
-        this.strings[index].update(this.audio.values[index]);
-
-        
+        this.strings[index].update(this.audio.values[index], this.percentAnim);
       }
-
-     
     }
 
-    // console.log('this.lineMesh.material.uniforms.dashOffset.value :>> ', this.lineMesh.material.uniforms.dashOffset.value);
+    function normalize(val, max, min) { return (val - min) / (max - min); }
 
-    // if (this.lineMesh.material.uniforms.dashOffset.value < -2)
-    //   this.lineMesh.material.uniforms.dashOffset.value = 0;
-    // this.lineMesh.material.uniforms.dashOffset.value -= 0.01;
 
-    // Decrement the dashOffset value to animate the path with the dash.
   };
 }
